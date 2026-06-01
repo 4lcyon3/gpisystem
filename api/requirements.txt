@@ -1,0 +1,59 @@
+# 📦 Backend Requirements
+
+## 🔧 Core Framework
+
+fastapi==0.136.3
+uvicorn[standard]
+
+## 🗄️ Base de Datos
+
+sqlalchemy==2.0.*
+psycopg2-binary
+alembic
+
+## 🔐 Autenticación (Cookies HttpOnly)
+
+python-multipart
+itsdangerous
+
+## 🔒 Seguridad de contraseñas
+passlib[argon2]
+cryptography-48.0.0 
+ecdsa-0.19.2 
+pyasn1-0.6.3 
+python-jose-3.5.0 
+rsa-4.9.1
+
+## 📡 Server-Sent Events (SSE)
+
+sse-starlette
+
+## ⚙️ Worker / Background Tasks
+
+# (sin Redis ni Celery, usando procesamiento interno)
+
+anyio
+asyncio
+
+## 📊 Procesamiento de datos (importaciones)
+
+pandas
+openpyxl
+python-dateutil
+
+## 🧪 Validación y utilidades
+
+pydantic
+pydantic-settings
+
+## 📁 Manejo de archivos
+
+aiofiles
+
+## 📝 Logging
+
+loguru
+
+## 🌐 CORS y utilidades web
+
+python-dotenv
