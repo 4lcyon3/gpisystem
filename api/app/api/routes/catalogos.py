@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from app.core.permissions import require_role
 from app.db.session import get_db
 from app.core.auth import get_current_user
 from app.models.sistema import Usuario
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/catalogos", tags=["Catálogos"])
 async def listar_entidades(
     activo: bool = True,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user)
+    _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
     result = await db.execute(
         select(Entidad).where(Entidad.activo == activo).order_by(Entidad.nombre)
@@ -25,7 +26,7 @@ async def listar_entidades(
 async def listar_centros_costo(
     entidad_id: str | None = None,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user)
+    _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
     query = select(CentroCosto, Entidad.nombre.label("ent_nombre"))\
         .join(Entidad, CentroCosto.entidad_id == Entidad.id)\
@@ -50,7 +51,7 @@ async def listar_centros_costo(
 @router.get("/clasificadores", response_model=list[ClasificadorOut])
 async def listar_clasificadores(
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user)
+    _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
     result = await db.execute(
         select(ClasificacionGasto)

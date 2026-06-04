@@ -3,6 +3,7 @@ from typing_extensions import Literal, cast
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from app.core.permissions import get_user_roles
 from app.db.session import get_db
 from app.models.sistema import Usuario
 from app.schemas.auth import LoginRequest, UserOut
@@ -10,6 +11,7 @@ from app.core.security import verify_password, create_access_token
 from app.core.auth import get_current_user
 from app.core.config import settings
 from datetime import timedelta
+from app.db.menu_config import MENU_CONFIG
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
@@ -64,3 +66,31 @@ async def logout(response: Response):
 @router.get("/me", response_model=UserOut)
 async def read_users_me(current_user: Usuario = Depends(get_current_user)):
     return current_user
+
+@router.get("/menu")
+async def obtener_menu(roles: list[str] = Depends(get_user_roles)):
+    """Devuelve el menú y los roles para que el Frontend renderice el Sidebar y controle permisos de UI."""
+    if "Administrador" in roles:
+        menu = MENU_CONFIG["Administrador"]
+        can_edit = True
+        can_upload = True
+    elif "Analista" in roles:
+        menu = MENU_CONFIG["Analista"]
+        can_edit = True
+        can_upload = True
+    elif "Auditor" in roles:
+        menu = MENU_CONFIG["Auditor"]
+        can_edit = False  # El auditor solo ve, no edita
+        can_upload = False
+    else:
+        menu, can_edit, can_upload = [], False, False
+    
+    return {
+        "roles": roles,
+        "menu": menu,
+        "permissions": {
+            "can_edit": can_edit,
+            "can_upload": can_upload,
+            "can_configure": "Administrador" in roles
+        }
+    }

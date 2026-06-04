@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import auth, analitica, cargas, catalogos
+from app.api.routes import (
+    auth, cargas, analitica, catalogos,
+    pei_poi, presupuesto, ejecucion, documentos
+)
 from app.worker.manager import start_worker, stop_worker
 
 @asynccontextmanager
@@ -36,6 +39,10 @@ app.include_router(auth.router, prefix="/api/v1")
 app.include_router(cargas.router, prefix="/api/v1")
 app.include_router(analitica.router, prefix="/api/v1")
 app.include_router(catalogos.router, prefix="/api/v1")
+app.include_router(pei_poi.router, prefix="/api/v1")
+app.include_router(presupuesto.router, prefix="/api/v1")
+app.include_router(ejecucion.router, prefix="/api/v1")
+app.include_router(documentos.router, prefix="/api/v1")
 
 @app.get("/")
 def root():

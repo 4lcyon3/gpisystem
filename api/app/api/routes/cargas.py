@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
+from app.core.permissions import get_user_roles, require_role
 from app.db.session import get_db
 from app.models.sistema import CargaDatos, CargaDetalle
 from app.schemas.carga import CargaOut, CargaDetalleOut, UploadResponse, EstadoCarga
@@ -19,7 +20,7 @@ router = APIRouter(prefix="/cargas", tags=["Cargas Masivas"])
 async def upload_archivo(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
+    roles: list[str] = Depends(require_role("Administrador", "Analista")),
 ):
     """
     Sube un archivo Excel/CSV y lo deja en cola para el Worker.
@@ -46,7 +47,7 @@ async def upload_archivo(
             tipo_archivo=suffix[1:],
             tamanio_bytes=len(content),
             estado=EstadoCarga.pendiente,
-            subido_por=current_user.id
+            subido_por=roles.id # type: ignore
         )
         db.add(carga)
         await db.commit()
@@ -69,7 +70,8 @@ async def listar_cargas(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user)
+    _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
+    
 ):
     """Historial de cargas masivas (Módulo 13 adaptado)"""
     query = select(CargaDatos).order_by(desc(CargaDatos.creado_en))
@@ -85,7 +87,7 @@ async def listar_cargas(
 async def detalle_carga(
     carga_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user)
+    _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
     result = await db.execute(
         select(CargaDatos).where(CargaDatos.id == carga_id)
@@ -99,7 +101,7 @@ async def detalle_carga(
 async def ver_errores_carga(
     carga_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user)
+    _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
     """Filas que fallaron durante el procesamiento"""
     result = await db.execute(
@@ -113,7 +115,7 @@ async def ver_errores_carga(
 async def stream_progreso(
     carga_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _: Usuario = Depends(get_current_user)
+    _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
     """
     SSE (Server-Sent Events) para mostrar barra de progreso en tiempo real.
