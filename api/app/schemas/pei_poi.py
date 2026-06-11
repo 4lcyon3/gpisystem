@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from uuid import UUID
 from datetime import date
 from decimal import Decimal
@@ -43,6 +43,16 @@ class POIBase(BaseModel):
     presupuesto_estimado: Decimal | None = None
     fuente_financiamiento_preliminar: str | None = None
     estado: str = "programada"
+    @field_validator(
+        'area_responsable', 'responsable_directo', 'unidad_medida',
+        'fuente_financiamiento_preliminar',
+        mode='before'
+    )
+    @classmethod
+    def empty_string_to_none(cls, v: str | None) -> str | None:
+        if isinstance(v, str) and v.strip() == '':
+            return None
+        return v
 
 class POICreate(POIBase):
     entidad_id: UUID

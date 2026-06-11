@@ -18,6 +18,7 @@ MENU_CONFIG = {
     ],
     "Analista": [
         # Todos menos Configuración
+        {"id": 1, "nombre": "Configuración", "icono": "Settings", "ruta": "/configuracion", "orden": 1},
         {"id": 2, "nombre": "PEI", "icono": "Target", "ruta": "/pei", "orden": 2},
         {"id": 3, "nombre": "POI", "icono": "ListTodo", "ruta": "/poi", "orden": 3},
         {"id": 4, "nombre": "Programación Multianual", "icono": "Calendar", "ruta": "/programacion", "orden": 4},

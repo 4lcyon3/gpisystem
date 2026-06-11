@@ -20,18 +20,19 @@ router = APIRouter(prefix="/cargas", tags=["Cargas Masivas"])
 async def upload_archivo(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-    roles: list[str] = Depends(require_role("Administrador", "Analista")),
+    current_user: Usuario = Depends(get_current_user),
+    _: list[str] = Depends(require_role("Administrador", "Analista"))
 ):
     """
     Sube un archivo Excel/CSV y lo deja en cola para el Worker.
-    El archivo se guarda temporalmente y el Worker lo procesará en background.
     """
+    
     # Validar extensión
-    if not file.filename.lower().endswith(('.csv', '.xlsx', '.xls')): # type: ignore
+    if not file.filename or not file.filename.lower().endswith(('.csv', '.xlsx', '.xls')):
         raise HTTPException(400, "Solo se permiten archivos CSV o Excel")
     
     # Crear archivo temporal
-    suffix = os.path.splitext(file.filename)[1] # type: ignore
+    suffix = os.path.splitext(file.filename)[1]
     temp_fd, temp_path = tempfile.mkstemp(suffix=suffix)
     
     try:
@@ -46,8 +47,8 @@ async def upload_archivo(
             nombre_archivo=temp_path,  # El Worker usará esta ruta
             tipo_archivo=suffix[1:],
             tamanio_bytes=len(content),
-            estado=EstadoCarga.pendiente,
-            subido_por=roles.id # type: ignore
+            estado=EstadoCarga.pendiente,  # Usar string directo para evitar problemas con Enums
+            subido_por=current_user.id  # ✅ Ahora sí funciona
         )
         db.add(carga)
         await db.commit()
@@ -56,12 +57,15 @@ async def upload_archivo(
         return UploadResponse(
             mensaje="Archivo recibido. El Worker lo procesará en segundos.",
             carga_id=carga.id,
-            estado=carga.estado # type: ignore
+            estado=carga.estado, # type: ignore
         )
     except Exception as e:
         # Limpiar temp si falla
         if os.path.exists(temp_path):
-            os.remove(temp_path)
+            try:
+                os.remove(temp_path)
+            except:
+                pass
         raise HTTPException(500, f"Error al procesar archivo: {str(e)}")
 
 @router.get("/", response_model=list[CargaOut])
@@ -70,8 +74,8 @@ async def listar_cargas(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
     _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
-    
 ):
     """Historial de cargas masivas (Módulo 13 adaptado)"""
     query = select(CargaDatos).order_by(desc(CargaDatos.creado_en))
@@ -87,6 +91,7 @@ async def listar_cargas(
 async def detalle_carga(
     carga_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
     _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
     result = await db.execute(
@@ -101,6 +106,7 @@ async def detalle_carga(
 async def ver_errores_carga(
     carga_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
     _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
     """Filas que fallaron durante el procesamiento"""
@@ -115,15 +121,18 @@ async def ver_errores_carga(
 async def stream_progreso(
     carga_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
     _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
-    """
-    SSE (Server-Sent Events) para mostrar barra de progreso en tiempo real.
-    El Frontend se suscribe con EventSource.
-    """
+    """SSE para progreso en tiempo real. Se cierra automáticamente al terminar."""
     async def event_generator():
-        while True:
-            # Nueva sesión por iteración (evita problemas con el pool)
+        max_iterations = 3600  # Máximo 1 hora (3600 segundos)
+        iterations = 0
+        
+        while iterations < max_iterations:
+            iterations += 1
+            
+            # Nueva sesión por iteración
             from app.db.session import AsyncSessionLocal
             async with AsyncSessionLocal() as session:
                 result = await session.execute(
@@ -136,25 +145,29 @@ async def stream_progreso(
                     break
                 
                 progreso = 0
-                if carga.filas_total > 0:
+                if carga.filas_total and carga.filas_total > 0:
                     progreso = int((carga.filas_ok / carga.filas_total) * 100)
                 
                 data = {
                     "carga_id": str(carga.id),
                     "estado": carga.estado,
-                    "filas_total": carga.filas_total,
-                    "filas_ok": carga.filas_ok,
-                    "filas_error": carga.filas_error,
+                    "filas_total": carga.filas_total or 0,
+                    "filas_ok": carga.filas_ok or 0,
+                    "filas_error": carga.filas_error or 0,
                     "progreso": progreso
                 }
                 
                 yield f"data: {json.dumps(data)}\n\n"
                 
-                # Si terminó, cerrar stream
+                # ✅ CERRAR la conexión cuando termina
                 if carga.estado in ["procesado", "error"]:
+                    print(f"[SSE] Carga {carga_id} terminó con estado: {carga.estado}. Cerrando stream.")
                     break
             
-            await asyncio.sleep(1)  # Polling cada segundo
+            await asyncio.sleep(1)
+        
+        if iterations >= max_iterations:
+            print(f"[SSE] Timeout alcanzado para carga {carga_id}")
     
     return StreamingResponse(
         event_generator(),
@@ -162,6 +175,33 @@ async def stream_progreso(
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
-            "X-Accel-Buffering": "no"  # Para Nginx
+            "X-Accel-Buffering": "no",
         }
     )
+@router.get("/{carga_id}/errores-detallados")
+async def ver_errores_detallados(
+    carga_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: Usuario = Depends(get_current_user)
+):
+    """Ver errores detallados con datos de cada fila"""
+    result = await db.execute(
+        select(CargaDetalle)
+        .where(CargaDetalle.carga_id == carga_id)
+        .order_by(CargaDetalle.numero_fila)
+        .limit(100)
+    )
+    errores = result.scalars().all()
+    
+    return {
+        "total_errores": len(errores),
+        "errores": [
+            {
+                "fila": e.numero_fila,
+                "estado": e.estado,
+                "mensaje": e.mensaje_error,
+                "datos_raw": e.datos_raw
+            }
+            for e in errores
+        ]
+    }

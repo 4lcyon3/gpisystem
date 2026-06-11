@@ -9,6 +9,14 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { UnauthorizedPage } from '@/pages/UnauthorizedPage';
 import { ModulePlaceholderPage } from '@/pages/ModulePlaceholderPage';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { ErrorBoundary } from './components/errors/ErrorBoundary';
+import { CargasPage } from './pages/CargasPage';
+import { PeiPage } from '@/pages/PeiPage';
+import { ConfiguracionPage } from '@/pages/ConfiguracionPage';
+import { PoiPage } from '@/pages/PoiPage';
+import { PresupuestoPage } from '@/pages/PresupuestoPage';
+import { ModificacionesPage } from '@/pages/ModificacionesPage';
+import { DisponibilidadPage } from '@/pages/DisponibilidadPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,44 +67,39 @@ function AppContent() {
 
       {/* Rutas Protegidas con Layout */}
       <Route
-        element={
+          element={
           <ProtectedRoute>
-            <MainLayout />
+            <ErrorBoundary>
+              <MainLayout />
+            </ErrorBoundary>
           </ProtectedRoute>
-        }
+          }
       >
         <Route path="/dashboard" element={<DashboardPage />} />
         
         {/* Módulos 1-15 (usarán ModulePlaceholderPage por ahora) */}
-        <Route path="/configuracion" element={<ModulePlaceholderPage />} />
-        <Route path="/pei" element={<ModulePlaceholderPage />} />
-        <Route path="/poi" element={<ModulePlaceholderPage />} />
+        <Route
+          path="/configuracion"
+          element={
+            <ProtectedRoute allowedRoles={['Administrador', 'Analista']}>
+              <ConfiguracionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/pei" element={<PeiPage />} />
+        <Route path="/poi" element={<PoiPage />} />
         <Route path="/programacion" element={<ModulePlaceholderPage />} />
-        <Route path="/presupuesto" element={<ModulePlaceholderPage />} />
-        <Route path="/disponibilidad" element={<ModulePlaceholderPage />} />
+        <Route path="/presupuesto" element={<PresupuestoPage />} />
+        <Route path="/disponibilidad" element={<DisponibilidadPage />} />
         <Route path="/certificacion" element={<ModulePlaceholderPage />} />
-        <Route path="/modificaciones" element={<ModulePlaceholderPage />} />
-        <Route path="/ejecucion" element={<ModulePlaceholderPage />} />
+        <Route path="/modificaciones" element={<ModificacionesPage />} />
+        <Route path="/ejecucion" element={<CargasPage />} />
         <Route path="/metas-fisicas" element={<ModulePlaceholderPage />} />
         <Route path="/alertas" element={<ModulePlaceholderPage />} />
         <Route path="/evaluacion" element={<ModulePlaceholderPage />} />
         <Route path="/documentos" element={<ModulePlaceholderPage />} />
         <Route path="/reportes" element={<ModulePlaceholderPage />} />
       </Route>
-
-      {/* Rutas protegidas con roles específicos (ejemplo para Configuración) */}
-      {/* 
-      <Route
-        path="/configuracion"
-        element={
-          <ProtectedRoute allowedRoles={['Administrador']}>
-            <MainLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<ConfiguracionPage />} />
-      </Route>
-      */}
 
       {/* Página de No Autorizado */}
       <Route path="/unauthorized" element={<UnauthorizedPage />} />

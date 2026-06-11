@@ -23,7 +23,8 @@ async def subir_documento(
     modulo_referencia: str = "general",
     registro_id: str = "",
     db: AsyncSession = Depends(get_db),
-    roles: list[str] = Depends(require_role("Administrador", "Analista"))
+    current_user: Usuario = Depends(get_current_user),
+    _: list[str] = Depends(require_role("Administrador", "Analista"))
 ):
     """Sube un documento y lo vincula a cualquier registro del sistema"""
     # Guardar archivo físicamente
@@ -57,6 +58,7 @@ async def listar_documentos(
     modulo: str | None = None,
     registro_id: str | None = None,
     db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
     _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
     query = select(Documento).order_by(desc(Documento.creado_en))
@@ -72,6 +74,7 @@ async def listar_documentos(
 async def obtener_documento(
     doc_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
     _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
     result = await db.execute(select(Documento).where(Documento.id == doc_id))

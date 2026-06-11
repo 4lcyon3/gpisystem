@@ -43,9 +43,15 @@ def _worker_loop():
 
 def start_worker():
     global _worker_thread
+    logger.info("🔧 [MANAGER] start_worker() llamado")
+    
     if _worker_thread is None or not _worker_thread.is_alive():
-        _worker_thread = threading.Thread(target=_worker_loop, daemon=True)
+        logger.info("🔧 [MANAGER] Creando nuevo hilo worker...")
+        _worker_thread = threading.Thread(target=_worker_loop, daemon=True, name="CargasWorker")
         _worker_thread.start()
+        logger.info(f"✅ [MANAGER] Worker iniciado en hilo: {_worker_thread.name}")
+    else:
+        logger.info(f"⚠️ [MANAGER] Worker ya está corriendo: {_worker_thread.is_alive()}")
 
 def stop_worker():
     logger.info("🛑 Deteniendo worker...")

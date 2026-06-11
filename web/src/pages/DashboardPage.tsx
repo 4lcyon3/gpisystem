@@ -1,122 +1,157 @@
-import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, LayoutDashboard, Users, FileText } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState } from 'react';
+import { DollarSign, TrendingUp, Wallet, AlertCircle, Target, CheckCircle2 } from 'lucide-react';
+import { DashboardFilters } from '@/components/dashboard/DashboardFilters';
+import { DashboardHero } from '@/components/dashboard/DashboardHero';
+import { KpiCard } from '@/components/dashboard/KpiCard';
+import { EvolucionMensualChart } from '@/components/dashboard/EvolucionMensualChart';
+import { RankingEntidadesTable } from '@/components/dashboard/RankingEntidadesTable';
+import { AlertasPanel } from '@/components/dashboard/AlertasPanel';
+import {
+  useKPIs,
+  useEvolucionMensual,
+  useRankingEntidades,
+  useAlertas,
+  useEntidades,
+  useClasificadores,
+  type DashboardFilters as DashboardFiltersType,
+} from '@/hooks/useDashboard';
+import { toNumber, formatCurrency, formatPercentage } from '@/lib/numbers';
 
 export function DashboardPage() {
-  const { user, roles, permissions, logout } = useAuth();
+  const currentYear = new Date().getFullYear();
 
-  const handleLogout = async () => {
-    await logout();
-    toast.success('Sesión cerrada correctamente');
-    window.location.href = '/login';
+  const [filters, setFilters] = useState<DashboardFiltersType>({
+    anio: currentYear,
+    entidad_id: 'todas',
+    trimestre: 'all',
+    mes: 'all',
+  });
+
+  const handleFiltersChange = (newFilters: Partial<DashboardFiltersType>) => {
+    setFilters((prev) => ({ ...prev, ...newFilters }));
   };
 
+  const handleClearAll = () => {
+    setFilters({
+      anio: currentYear,
+      entidad_id: 'todas',
+      trimestre: 'all',
+      mes: 'all',
+    });
+  };
+
+  // ✅ Extraer los refetch de cada query
+  const { data: kpis, isFetching: kpisFetching, refetch: refetchKpis } = useKPIs(filters);
+  const { data: evolucion, isFetching: evolucionFetching, refetch: refetchEvolucion } = useEvolucionMensual(filters);
+  const { data: ranking, isFetching: rankingFetching, refetch: refetchRanking } = useRankingEntidades(filters);
+  const { data: alertas, isFetching: alertasFetching, refetch: refetchAlertas } = useAlertas();
+  const { data: entidades = [] } = useEntidades();
+  const { data: clasificadores = [] } = useClasificadores();
+
+  // ✅ Usar isFetching en lugar de isLoading
+  const isLoadingKpis = kpisFetching;
+  const isLoadingEvolucion = evolucionFetching;
+  const isLoadingRanking = rankingFetching;
+  const isLoadingAlertas = alertasFetching;
+
+  // ✅ Refetch directo a cada query
+  const handleRefresh = async () => {
+    await Promise.all([
+      refetchKpis(),
+      refetchEvolucion(),
+      refetchRanking(),
+      refetchAlertas(),
+    ]);
+  };
+
+  // El botón se deshabilita mientras CUALQUIER query esté haciendo fetch
+  const isRefreshing = kpisFetching || evolucionFetching;
+
+  const pimTotal = toNumber(kpis?.pim_total);
+  const saldoDisponible = toNumber(kpis?.saldo_disponible);
+  const porcentajeEjecucion = toNumber(kpis?.porcentaje_ejecucion);
+  const saldoColor = saldoDisponible > (pimTotal * 0.3) ? 'red' : 'gray';
+
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <LayoutDashboard className="w-8 h-8 text-blue-600" />
-              Dashboard
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Bienvenido, <span className="font-semibold">{user?.username}</span>
-            </p>
-          </div>
-          <Button variant="outline" onClick={handleLogout}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Cerrar Sesión
-          </Button>
-        </div>
+    <div className="p-6 lg:p-8 max-w-400 mx-auto">
+      <DashboardHero anio={filters.anio} />
 
-        {/* Info del Usuario */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Información de Sesión
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Usuario</p>
-                <p className="font-semibold">{user?.username}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Email</p>
-                <p className="font-semibold">{user?.email}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Roles</p>
-                <div className="flex gap-2 mt-1">
-                  {roles.map((role) => (
-                    <span
-                      key={role}
-                      className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium"
-                    >
-                      {role}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Permisos</p>
-                <div className="flex gap-2 mt-1 flex-wrap">
-                  {permissions.can_edit && (
-                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-                      ✏️ Editar
-                    </span>
-                  )}
-                  {permissions.can_upload && (
-                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-                      📤 Subir Archivos
-                    </span>
-                  )}
-                  {permissions.can_configure && (
-                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-                      ⚙️ Configurar
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <DashboardFilters
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        onClearAll={handleClearAll}
+        entidades={entidades}
+        clasificadores={clasificadores}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+      />
 
-        {/* Placeholder para próximos módulos */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Módulos del Sistema
-            </CardTitle>
-            <CardDescription>
-              En la Fase 2 construiremos el Sidebar dinámico con los 15 módulos
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-              {[
-                'Configuración', 'PEI', 'POI', 'Programación', 'Presupuesto',
-                'Disponibilidad', 'Certificación', 'Modificaciones', 'Ejecución',
-                'Metas Físicas', 'Alertas', 'Evaluación', 'Documentos',
-                'Reportes', 'Dashboard'
-              ].map((modulo, idx) => (
-                <div
-                  key={idx}
-                  className="p-3 border rounded-lg text-center text-sm text-gray-600 hover:bg-gray-50"
-                >
-                  {modulo}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Grid de KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+        <KpiCard
+          title="PIA Total"
+          value={formatCurrency(kpis?.pia_total)}
+          subtitle="Presupuesto Apertura"
+          icon={DollarSign}
+          iconColor="blue"
+          isLoading={isLoadingKpis}
+          variation={toNumber(kpis?.variacion_pia)}
+        />
+        <KpiCard
+          title="PIM Total"
+          value={formatCurrency(kpis?.pim_total)}
+          subtitle="Presupuesto Modificado"
+          icon={TrendingUp}
+          iconColor="purple"
+          isLoading={isLoadingKpis}
+          variation={toNumber(kpis?.variacion_pim)}
+        />
+        <KpiCard
+          title="Certificado"
+          value={formatCurrency(kpis?.certificado)}
+          subtitle="Monto reservado"
+          icon={CheckCircle2}
+          iconColor="blue"
+          isLoading={isLoadingKpis}
+        />
+        <KpiCard
+          title="Devengado"
+          value={formatCurrency(kpis?.devengado)}
+          subtitle="Ejecución real"
+          icon={Wallet}
+          iconColor="green"
+          isLoading={isLoadingKpis}
+          trend={{
+            value: porcentajeEjecucion,
+            label: 'ejecución',
+          }}
+          variation={toNumber(kpis?.variacion_devengado)}
+        />
+        <KpiCard
+          title="% Ejecución"
+          value={formatPercentage(kpis?.porcentaje_ejecucion)}
+          subtitle="Del PIM"
+          icon={Target}
+          iconColor="yellow"
+          isLoading={isLoadingKpis}
+        />
+        <KpiCard
+          title="Saldo Disponible"
+          value={formatCurrency(kpis?.saldo_disponible)}
+          subtitle={`${kpis?.total_entidades || 0} entidades`}
+          icon={AlertCircle}
+          iconColor={saldoColor as 'red' | 'gray'}
+          isLoading={isLoadingKpis}
+        />
+      </div>
+
+      <div className="mb-6">
+        <EvolucionMensualChart data={evolucion} isLoading={isLoadingEvolucion} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RankingEntidadesTable data={ranking} isLoading={isLoadingRanking} />
+        <AlertasPanel data={alertas} isLoading={isLoadingAlertas} />
       </div>
     </div>
   );

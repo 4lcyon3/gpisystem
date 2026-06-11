@@ -23,7 +23,8 @@ router = APIRouter(prefix="/ejecucion", tags=["Ejecución Presupuestal"])
 async def crear_disponibilidad(
     data: DisponibilidadCreate,
     db: AsyncSession = Depends(get_db),
-    roles: list[str] = Depends(require_role("Administrador", "Analista")),
+    current_user: Usuario = Depends(get_current_user),
+    _: list[str] = Depends(require_role("Administrador", "Analista")),
 ):
     disp = Disponibilidad(id=uuid.uuid4(), **data.model_dump())
     db.add(disp)
@@ -36,6 +37,7 @@ async def listar_disponibilidad(
     entidad_id: str | None = None,
     estado: str | None = None,
     db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
     _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
     query = select(Disponibilidad).order_by(desc(Disponibilidad.fecha_solicitud))
@@ -53,7 +55,8 @@ async def listar_disponibilidad(
 async def crear_certificacion(
     data: CertificacionCreate,
     db: AsyncSession = Depends(get_db),
-    roles: list[str] = Depends(require_role("Administrador", "Analista"))
+    current_user: Usuario = Depends(get_current_user),
+    _: list[str] = Depends(require_role("Administrador", "Analista"))
 ):
     cert = Certificacion(id=uuid.uuid4(), **data.model_dump())
     db.add(cert)
@@ -65,6 +68,7 @@ async def crear_certificacion(
 async def listar_certificaciones(
     estado: str | None = None,
     db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
     _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
     query = select(Certificacion).order_by(desc(Certificacion.fecha_certificacion))
@@ -80,7 +84,8 @@ async def listar_certificaciones(
 async def crear_modificacion(
     data: ModificacionPresupuestariaCreate,
     db: AsyncSession = Depends(get_db),
-    roles: list[str] = Depends(require_role("Administrador", "Analista")),
+    current_user: Usuario = Depends(get_current_user),
+    _: list[str] = Depends(require_role("Administrador", "Analista")),
 ):
     mod = ModificacionPresupuestaria(id=uuid.uuid4(), **data.model_dump())
     db.add(mod)
@@ -93,6 +98,7 @@ async def listar_modificaciones(
     entidad_id: str | None = None,
     tipo: str | None = None,
     db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
     _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
     query = select(ModificacionPresupuestaria).order_by(desc(ModificacionPresupuestaria.fecha_aprobacion))
@@ -110,7 +116,8 @@ async def listar_modificaciones(
 async def registrar_avance_fisico(
     data: AvanceFisicoCreate,
     db: AsyncSession = Depends(get_db),
-    roles: list[str] = Depends(require_role("Administrador", "Analista"))
+    current_user: Usuario = Depends(get_current_user),
+    _: list[str] = Depends(require_role("Administrador", "Analista"))
 ):
     avance = AvanceFisico(id=uuid.uuid4(), **data.model_dump())
     db.add(avance)
@@ -123,6 +130,7 @@ async def listar_avances_fisicos(
     poi_id: str | None = None,
     anio: int | None = None,
     db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
     _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
     query = select(AvanceFisico).order_by(desc(AvanceFisico.anio_fiscal), desc(AvanceFisico.mes))

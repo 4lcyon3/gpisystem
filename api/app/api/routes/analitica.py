@@ -21,7 +21,8 @@ async def kpis_principales(
     anio: int = Query(2026, description="Año fiscal"),
     entidad_id: str | None = None,
     db: AsyncSession = Depends(get_db),
-    _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
+    current_user: Usuario = Depends(get_current_user),
+    __: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
     """KPIs principales del Dashboard"""
     query = select(
@@ -71,6 +72,7 @@ async def evolucion_mensual(
     anio: int = Query(2026),
     entidad_id: str | None = None,
     db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
     _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
     """Serie de tiempo para gráfico de líneas (Recharts)"""
@@ -106,6 +108,7 @@ async def ranking_entidades(
     anio: int = Query(2026),
     limit: int = Query(10, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
     _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
     """Top entidades por % de ejecución"""
@@ -143,6 +146,7 @@ async def alertas_activas(
     nivel: str | None = None,
     limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
     _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
 ):
     """Semáforo de alertas (Módulo 11)"""
