@@ -1,9 +1,14 @@
+from typing import TYPE_CHECKING
 from sqlalchemy import DateTime, String, Integer, Numeric, Date, ForeignKey, Text, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from app.db.session import Base, TimestampMixin
 import uuid
 from datetime import date, datetime
+
+if TYPE_CHECKING:
+    from app.models.dimensionales import Entidad
+    from app.models.sistema import Usuario
 
 class ProgramacionMultianual(Base, TimestampMixin):
     """Módulo 4: Proyección de necesidades a futuro"""
@@ -38,15 +43,25 @@ class Disponibilidad(Base, TimestampMixin):
     aprobado_por: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("usuario.id"), nullable=True)
     fecha_aprobacion: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-class Certificacion(Base, TimestampMixin):
-    """Módulo 7: Histórico de reservas de presupuesto"""
-    __tablename__ = "certificacion"
+class CertificacionPresupuestal(Base, TimestampMixin):
+    """Módulo 7: Certificaciones que congelan saldo del PIM"""
+    __tablename__ = "certificacion_presupuestal"
+    
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    numero_certificacion: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
-    disponibilidad_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("disponibilidad.id"))
+    entidad_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("entidad.id"), nullable=False, index=True)
+    disponibilidad_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("disponibilidad.id"), nullable=False, index=True)
+    numero_certificado: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     monto_certificado: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False)
     fecha_certificacion: Mapped[date] = mapped_column(Date, nullable=False)
-    estado: Mapped[str] = mapped_column(String(20), default="vigente") # vigente, anulada
+    anio_fiscal: Mapped[int] = mapped_column(nullable=False, index=True)
+    estado: Mapped[str] = mapped_column(String(20), default="vigente")  # vigente, anulada, ejecutada
+    observaciones: Mapped[str | None] = mapped_column(Text, nullable=True)
+    certificado_por: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("usuario.id"), nullable=True)
+    
+    # Relaciones
+    disponibilidad: Mapped["Disponibilidad"] = relationship()
+    entidad: Mapped["Entidad"] = relationship()
+    certificador: Mapped["Usuario"] = relationship()
 
 class ModificacionPresupuestaria(Base, TimestampMixin):
     """Módulo 8: Histórico de cambios al PIA (Generan el PIM)"""

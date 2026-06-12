@@ -25,22 +25,6 @@ class DisponibilidadOut(BaseModel):
     
     model_config = ConfigDict(from_attributes=True)
 
-class CertificacionCreate(BaseModel):
-    numero_certificacion: str
-    disponibilidad_id: UUID | None = None
-    monto_certificado: Decimal
-    fecha_certificacion: date
-    estado: str = "vigente"
-
-class CertificacionOut(BaseModel):
-    id: UUID
-    numero_certificacion: str
-    monto_certificado: Decimal
-    fecha_certificacion: date
-    estado: str
-    
-    model_config = ConfigDict(from_attributes=True)
-
 class ModificacionPresupuestariaCreate(BaseModel):
     entidad_id: UUID
     numero_resolucion: str

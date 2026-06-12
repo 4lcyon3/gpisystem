@@ -5,11 +5,10 @@ from app.core.permissions import require_role
 from app.db.session import get_db
 from app.core.auth import get_current_user
 from app.models.sistema import Usuario
-from app.models.ciclo_gasto import Disponibilidad, Certificacion, ModificacionPresupuestaria
+from app.models.ciclo_gasto import Disponibilidad, ModificacionPresupuestaria
 from app.models.seguimiento import AvanceFisico
 from app.schemas.ejecucion import (
     DisponibilidadCreate, DisponibilidadOut,
-    CertificacionCreate, CertificacionOut,
     ModificacionPresupuestariaCreate, ModificacionPresupuestariaOut,
     AvanceFisicoCreate, AvanceFisicoOut
 )
@@ -45,35 +44,6 @@ async def listar_disponibilidad(
         query = query.where(Disponibilidad.entidad_id == entidad_id)
     if estado:
         query = query.where(Disponibilidad.estado == estado)
-    
-    result = await db.execute(query)
-    return result.scalars().all()
-
-# ============ Certificación (Módulo 7) ============
-
-@router.post("/certificacion", response_model=CertificacionOut)
-async def crear_certificacion(
-    data: CertificacionCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user),
-    _: list[str] = Depends(require_role("Administrador", "Analista"))
-):
-    cert = Certificacion(id=uuid.uuid4(), **data.model_dump())
-    db.add(cert)
-    await db.commit()
-    await db.refresh(cert)
-    return cert
-
-@router.get("/certificacion", response_model=list[CertificacionOut])
-async def listar_certificaciones(
-    estado: str | None = None,
-    db: AsyncSession = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user),
-    _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
-):
-    query = select(Certificacion).order_by(desc(Certificacion.fecha_certificacion))
-    if estado:
-        query = query.where(Certificacion.estado == estado)
     
     result = await db.execute(query)
     return result.scalars().all()

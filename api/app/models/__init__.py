@@ -4,7 +4,7 @@ from .dimensionales import Entidad, CentroCosto, ClasificacionGasto, FuenteDatos
 from .estrategicas import PEI, POI, Presupuesto
 from .operativas import Gasto, GastoResumenMensual
 from .catalogos import FuenteFinanciamiento, MetaPresupuestal
-from .ciclo_gasto import ProgramacionMultianual, Disponibilidad, Certificacion, ModificacionPresupuestaria
+from .ciclo_gasto import ProgramacionMultianual, Disponibilidad, ModificacionPresupuestaria, CertificacionPresupuestal
 from .seguimiento import AvanceFisico, Alerta, Documento
 
 __all__ = [
@@ -13,6 +13,6 @@ __all__ = [
     "PEI", "POI", "Presupuesto",
     "Gasto", "GastoResumenMensual",
     "FuenteFinanciamiento", "MetaPresupuestal",
-    "ProgramacionMultianual", "Disponibilidad", "Certificacion", "ModificacionPresupuestaria",
+    "ProgramacionMultianual", "Disponibilidad", "CertificacionPresupuestal", "ModificacionPresupuestaria",
     "AvanceFisico", "Alerta", "Documento"
 ]
