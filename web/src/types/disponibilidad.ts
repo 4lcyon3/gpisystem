@@ -46,6 +46,7 @@ export interface DisponibilidadEntity {
   clasificador_codigo?: string;
   clasificador_descripcion?: string;
   fuente_nombre?: string;
+  meta_nombre?: string;  
 }
 
 export interface DisponibilidadPaginatedResponse {

@@ -1,13 +1,8 @@
-from pydantic import BaseModel, ConfigDict
-from uuid import UUID
+from typing import List
+import uuid
 
-class CentroCostoOut(BaseModel):
-    id: UUID
-    codigo: str
-    nombre: str
-    entidad_nombre: str
-    
-    model_config = ConfigDict(from_attributes=True)
+from pydantic import BaseModel, ConfigDict, field_validator
+from uuid import UUID
 
 class ClasificadorOut(BaseModel):
     id: UUID
@@ -74,5 +69,81 @@ class FuenteDatosOut(BaseModel):
     nombre: str
     tipo: str | None = None
     activo: bool
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CentroCostoCreate(BaseModel):
+    entidad_id: UUID
+    codigo: str
+    nombre: str
+    activo: bool = True
+
+class CentroCostoOut(CentroCostoCreate):
+    id: UUID
+    creado_en: datetime
+    actualizado_en: datetime | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+class MetaPresupuestalCreate(BaseModel):
+    entidad_id: UUID
+    codigo: str
+    nombre: str
+    anio_fiscal: int
+
+class MetaPresupuestalOut(MetaPresupuestalCreate):
+    id: UUID
+    creado_en: datetime
+    actualizado_en: datetime | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FuenteFinanciamientoCreate(BaseModel):
+    codigo: str
+    nombre: str
+    tipo_rubro: str | None = None
+    activo: bool = True
+
+class FuenteFinanciamientoOut(FuenteFinanciamientoCreate):
+    id: UUID
+    creado_en: datetime
+    actualizado_en: datetime | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+class BulkDeleteRequest(BaseModel):
+    ids: List[uuid.UUID]
+
+class ClasificacionGastoCreate(BaseModel):
+    codigo: str
+    descripcion: str
+    generica: str | None = None
+    subgenerica: str | None = None
+    especifica: str | None = None
+    activo: bool = True
+
+    @field_validator("codigo")
+    @classmethod
+    def validar_codigo(cls, v: str) -> str:
+        return v.strip()
+
+    @field_validator("descripcion")
+    @classmethod
+    def validar_descripcion(cls, v: str) -> str:
+        return v.strip()
+
+
+class ClasificacionGastoUpdate(BaseModel):
+    descripcion: str | None = None
+    generica: str | None = None
+    subgenerica: str | None = None
+    especifica: str | None = None
+    activo: bool | None = None
+
+
+class ClasificacionGastoOut(ClasificacionGastoCreate):
+    id: UUID
+    creado_en: datetime
+    actualizado_en: datetime | None = None
     
     model_config = ConfigDict(from_attributes=True)

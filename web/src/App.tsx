@@ -17,6 +17,7 @@ import { PoiPage } from '@/pages/PoiPage';
 import { PresupuestoPage } from '@/pages/PresupuestoPage';
 import { ModificacionesPage } from '@/pages/ModificacionesPage';
 import { DisponibilidadPage } from '@/pages/DisponibilidadPage';
+import { CatalogosPage } from '@/pages/CatalogosPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -88,6 +89,7 @@ function AppContent() {
         />
         <Route path="/pei" element={<PeiPage />} />
         <Route path="/poi" element={<PoiPage />} />
+        <Route path="/catalogos" element={<CatalogosPage />} />
         <Route path="/programacion" element={<ModulePlaceholderPage />} />
         <Route path="/presupuesto" element={<PresupuestoPage />} />
         <Route path="/disponibilidad" element={<DisponibilidadPage />} />

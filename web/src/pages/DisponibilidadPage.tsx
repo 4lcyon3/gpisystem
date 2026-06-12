@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { DisponibilidadTable } from '@/components/disponibilidad/DisponibilidadTable';
 import { DisponibilidadForm } from '@/components/disponibilidad/DisponibilidadForm';
+import { DisponibilidadDetalleDialog } from '@/components/disponibilidad/DisponibilidadDetalleDialog';
 import { AprobarDialog } from '@/components/disponibilidad/AprobarDialog';
 import { RechazarDialog } from '@/components/disponibilidad/RechazarDialog';
 import {
@@ -37,7 +38,7 @@ export function DisponibilidadPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DisponibilidadEntity | null>(null);
-  const [, setViewing] = useState<DisponibilidadEntity | null>(null);
+  const [viewing, setViewing] = useState<DisponibilidadEntity | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<DisponibilidadEntity | null>(null);
   const [aprobarTarget, setAprobarTarget] = useState<DisponibilidadEntity | null>(null);
   const [rechazarTarget, setRechazarTarget] = useState<DisponibilidadEntity | null>(null);
@@ -91,6 +92,8 @@ export function DisponibilidadPage() {
           <DisponibilidadForm defaultValues={editing || undefined} onSubmit={handleSubmit} onCancel={() => setDialogOpen(false)} isLoading={createMut.isPending || updateMut.isPending} />
         </DialogContent>
       </Dialog>
+      
+
 
       {/* Aprobar Dialog */}
       <AprobarDialog open={!!aprobarTarget} onOpenChange={(o) => !o && setAprobarTarget(null)} disponibilidad={aprobarTarget} isLoading={aprobarMut.isPending}
@@ -104,6 +107,12 @@ export function DisponibilidadPage() {
       <ConfirmDialog open={!!deleteConfirm} onOpenChange={(o) => !o && setDeleteConfirm(null)} title="Eliminar Solicitud"
         description={`¿Eliminar la solicitud ${deleteConfirm?.numero_solicitud}?`} variant="destructive" isLoading={deleteMut.isPending}
         onConfirm={async () => { if (deleteConfirm) { await deleteMut.mutateAsync(deleteConfirm.id); setDeleteConfirm(null); } }} />
+
+      <DisponibilidadDetalleDialog
+        open={!!viewing}
+        onOpenChange={(open) => { if (!open) setViewing(null); }}
+        disponibilidad={viewing}
+      />
     </div>
   );
 }

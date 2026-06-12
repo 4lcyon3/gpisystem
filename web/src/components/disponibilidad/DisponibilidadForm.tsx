@@ -32,14 +32,14 @@ export function DisponibilidadForm({
 }: DisponibilidadFormProps) {
   const currentYear = new Date().getFullYear();
   const [entidadId, setEntidadId] = useState(defaultValues?.entidad_id || '');
-  const [anioFiscal, setAnioFiscal] = useState(defaultValues?.anio_fiscal || currentYear);
+  const [, setAnioFiscal] = useState(defaultValues?.anio_fiscal || currentYear);
 
   const { data: entidades = [] } = useEntidades();
   const { data: centrosCosto = [] } = useCentrosCosto(entidadId);
   const { data: poisData } = usePoiList({ page: 1, limit: 100, entidad_id: entidadId });
   const { data: clasificadores = [] } = useClasificadores();
   const { data: fuentes = [] } = useFuentesFinanciamiento();
-  const { data: metas = [] } = useMetasPresupuestales(entidadId, anioFiscal);
+  const { data: metas = [] } = useMetasPresupuestales(entidadId);
 
   const { control, register, handleSubmit, formState: { errors }, reset, setValue } =
     useForm<DisponibilidadFormValues>({

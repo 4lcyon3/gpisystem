@@ -14,6 +14,7 @@ import {
   FileText,
   FileBarChart,
   LayoutDashboard,
+  BookOpen,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -33,6 +34,7 @@ const iconMap: Record<string, LucideIcon> = {
   FileText,
   FileBarChart,
   LayoutDashboard,
+  BookOpen,
 };
 
 export function getIcon(iconName: string): LucideIcon {
