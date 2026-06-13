@@ -19,6 +19,7 @@ import { ModificacionesPage } from '@/pages/ModificacionesPage';
 import { DisponibilidadPage } from '@/pages/DisponibilidadPage';
 import { CatalogosPage } from '@/pages/CatalogosPage';
 import { CertificacionesPage } from '@/pages/CertificacionesPage';
+import { AvancesPage } from '@/pages/AvancesPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -97,7 +98,7 @@ function AppContent() {
         <Route path="/certificaciones" element={<CertificacionesPage />} />
         <Route path="/modificaciones" element={<ModificacionesPage />} />
         <Route path="/ejecucion" element={<CargasPage />} />
-        <Route path="/metas-fisicas" element={<ModulePlaceholderPage />} />
+        <Route path="/avances" element={<AvancesPage />} />
         <Route path="/alertas" element={<ModulePlaceholderPage />} />
         <Route path="/evaluacion" element={<ModulePlaceholderPage />} />
         <Route path="/documentos" element={<ModulePlaceholderPage />} />

@@ -42,23 +42,3 @@ class ModificacionPresupuestariaOut(BaseModel):
     estado: str
     
     model_config = ConfigDict(from_attributes=True)
-
-class AvanceFisicoCreate(BaseModel):
-    poi_id: UUID
-    anio_fiscal: int
-    mes: int
-    meta_programada: Decimal
-    avance_ejecutado: Decimal
-    porcentaje_avance: Decimal
-    evidencia: str | None = None
-
-class AvanceFisicoOut(BaseModel):
-    id: UUID
-    poi_id: UUID
-    anio_fiscal: int
-    mes: int
-    meta_programada: Decimal
-    avance_ejecutado: Decimal
-    porcentaje_avance: Decimal
-    
-    model_config = ConfigDict(from_attributes=True)

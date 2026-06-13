@@ -9,8 +9,7 @@ from app.models.ciclo_gasto import Disponibilidad, ModificacionPresupuestaria
 from app.models.seguimiento import AvanceFisico
 from app.schemas.ejecucion import (
     DisponibilidadCreate, DisponibilidadOut,
-    ModificacionPresupuestariaCreate, ModificacionPresupuestariaOut,
-    AvanceFisicoCreate, AvanceFisicoOut
+    ModificacionPresupuestariaCreate, ModificacionPresupuestariaOut
 )
 import uuid
 
@@ -76,38 +75,6 @@ async def listar_modificaciones(
         query = query.where(ModificacionPresupuestaria.entidad_id == entidad_id)
     if tipo:
         query = query.where(ModificacionPresupuestaria.tipo_modificacion == tipo)
-    
-    result = await db.execute(query)
-    return result.scalars().all()
-
-# ============ Avance Físico (Módulo 10) ============
-
-@router.post("/avance-fisico", response_model=AvanceFisicoOut)
-async def registrar_avance_fisico(
-    data: AvanceFisicoCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user),
-    _: list[str] = Depends(require_role("Administrador", "Analista"))
-):
-    avance = AvanceFisico(id=uuid.uuid4(), **data.model_dump())
-    db.add(avance)
-    await db.commit()
-    await db.refresh(avance)
-    return avance
-
-@router.get("/avance-fisico", response_model=list[AvanceFisicoOut])
-async def listar_avances_fisicos(
-    poi_id: str | None = None,
-    anio: int | None = None,
-    db: AsyncSession = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user),
-    _: list[str] = Depends(require_role("Administrador", "Analista", "Auditor"))
-):
-    query = select(AvanceFisico).order_by(desc(AvanceFisico.anio_fiscal), desc(AvanceFisico.mes))
-    if poi_id:
-        query = query.where(AvanceFisico.poi_id == poi_id)
-    if anio:
-        query = query.where(AvanceFisico.anio_fiscal == anio)
     
     result = await db.execute(query)
     return result.scalars().all()

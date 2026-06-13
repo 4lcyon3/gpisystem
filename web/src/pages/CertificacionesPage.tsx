@@ -86,7 +86,7 @@ export function CertificacionesPage() {
   const hasFilters = estadoFilter !== '__all__' || entidadFilter !== '__all__';
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1600px] mx-auto">
+    <div className="p-6 lg:p-8 max-w-400 mx-auto">
       <PageHeader
         title="Certificación Presupuestal"
         description="Emisión y gestión de Certificados de Crédito Presupuestario (CCP)"
@@ -117,7 +117,7 @@ export function CertificacionesPage() {
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-gray-500" />
           <Select value={estadoFilter} onValueChange={(v) => { setEstadoFilter(v); setPage(1); }}>
-            <SelectTrigger className="w-[180px] h-10"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-45 h-10"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">Todos los estados</SelectItem>
               {ESTADOS_CERTIFICACION.map(e => <SelectItem key={e} value={e}>{ESTADOS_CONFIG[e].label}</SelectItem>)}
@@ -137,13 +137,13 @@ export function CertificacionesPage() {
         <Table>
           <TableHeader>
             <TableRow className="bg-gray-50/50">
-              <TableHead className="w-[150px] font-semibold">N° Certificado</TableHead>
+              <TableHead className="w-37.5 font-semibold">N° Certificado</TableHead>
               <TableHead className="font-semibold">Entidad</TableHead>
               <TableHead className="font-semibold">Disponibilidad</TableHead>
               <TableHead className="font-semibold cursor-pointer select-none text-right">Monto</TableHead>
-              <TableHead className="w-[130px] font-semibold">Fecha</TableHead>
-              <TableHead className="w-[120px] font-semibold">Estado</TableHead>
-              <TableHead className="w-[80px]" />
+              <TableHead className="w-32.5 font-semibold">Fecha</TableHead>
+              <TableHead className="w-30 font-semibold">Estado</TableHead>
+              <TableHead className="w-20" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -166,7 +166,7 @@ export function CertificacionesPage() {
                         {cert.numero_certificado}
                       </span>
                     </TableCell>
-                    <TableCell className="text-sm text-gray-700 truncate max-w-[200px]">{cert.entidad_nombre || '—'}</TableCell>
+                    <TableCell className="text-sm text-gray-700 truncate max-w-50">{cert.entidad_nombre || '—'}</TableCell>
                     <TableCell className="text-sm text-blue-600 font-mono">{cert.disponibilidad_numero || '—'}</TableCell>
                     <TableCell className="text-right font-bold text-gray-900 tabular-nums">{formatCurrency(cert.monto_certificado)}</TableCell>
                     <TableCell className="text-xs text-gray-600">
@@ -347,7 +347,7 @@ function AnularCertificacionForm({ onConfirm, onCancel, isLoading }: { onConfirm
       </div>
       <div className="space-y-2">
         <Label>Motivo de Anulación <span className="text-red-500">*</span></Label>
-        <Textarea {...register('observaciones')} placeholder="Explique el motivo..." className="min-h-[100px]" />
+        <Textarea {...register('observaciones')} placeholder="Explique el motivo..." className="min-h-25" />
         {errors.observaciones && <p className="text-xs text-red-600">{errors.observaciones.message}</p>}
       </div>
       <div className="flex justify-end gap-2">
