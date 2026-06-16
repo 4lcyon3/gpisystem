@@ -1,15 +1,19 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Search, MoreVertical, Eye, Pencil, Trash2, CheckCircle, XCircle, ChevronLeft, ChevronRight, FileText, Filter, X } from 'lucide-react';
+import { Search, MoreVertical, Eye, Pencil, Trash2, CheckCircle, XCircle, ChevronLeft, ChevronRight, FileText, Filter, X, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { DisponibilidadEntity } from '@/types/disponibilidad';
 import { ESTADOS_DISPONIBILIDAD } from '@/types/disponibilidad';
 import { EmptyState } from '@/components/ui/empty-state';
+import { ExportButton } from '@/components/ui/export-button';
+import { useEntidades } from '@/hooks/useEntidades';
+import { SearchableSelect, type SelectOption } from '@/components/ui/searchable-select';
 
 interface Props {
   data: DisponibilidadEntity[];
@@ -32,6 +36,9 @@ interface Props {
   onRechazar: (d: DisponibilidadEntity) => void;
   canEdit: boolean;
   isAdmin: boolean;
+  entidadFilter: string; // ✅ NUEVO
+  onEntidadFilterChange: (v: string) => void;
+  exportFilters?: Record<string, any>; 
 }
 
 const ESTADOS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -43,12 +50,24 @@ const ESTADOS_CONFIG: Record<string, { label: string; color: string }> = {
 export function DisponibilidadTable(props: Props) {
   const { data, isLoading, total, page, limit, search, estadoFilter, anioFilter,
     onSearchChange, onEstadoFilterChange, onAnioFilterChange, onPageChange, onLimitChange,
-    onView, onEdit, onDelete, onAprobar, onRechazar, canEdit, isAdmin } = props;
+    onView, onEdit, onDelete, onAprobar, onRechazar, canEdit, isAdmin, entidadFilter,
+    onEntidadFilterChange, exportFilters, } = props;
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const hasFilters = estadoFilter !== '__all__' || anioFilter !== '__all__';
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+  const { data: entidades = [] } = useEntidades();
+
+  const entidadOptions: SelectOption[] = [
+    { value: '__all__', label: 'Todas las entidades', badge: '∞' },
+    ...entidades.map((e) => ({
+      value: e.id,
+      label: e.nombre,
+      badge: e.ruc,
+      keywords: [e.ruc, e.sector].filter(Boolean) as string[],
+    })),
+  ];
 
   const formatCurrency = (v: number) => v ? new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(v) : 'S/ 0.00';
 
@@ -56,14 +75,30 @@ export function DisponibilidadTable(props: Props) {
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="p-4 border-b border-gray-200 space-y-3">
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input value={search} onChange={(e) => onSearchChange(e.target.value)} placeholder="Buscar N° solicitud, descripción..." className="pl-9 h-9" />
+          <div className="flex gap-2 items-center">
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input value={search} onChange={(e) => onSearchChange(e.target.value)} placeholder="N° solicitud, descripción..." className="pl-9 h-12" />
+            </div>
+            <div className="w-full lg:w-[320px]">
+              <SearchableSelect
+                options={entidadOptions}
+                value={entidadFilter}
+                onChange={onEntidadFilterChange}
+                placeholder="Filtrar por entidad"
+                searchPlaceholder="Buscar entidad..."
+                icon={<Building2 className="w-4 h-4" />}
+                clearable={false}
+                showCount
+              />
+            </div>
           </div>
+
           <div className="flex gap-2 items-center">
             <Filter className="w-4 h-4 text-gray-500" />
+
             <Select value={anioFilter} onValueChange={onAnioFilterChange}>
-              <SelectTrigger className="w-30 h-9"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-40 h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all__">Todos los años</SelectItem>
                 {years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
@@ -80,6 +115,13 @@ export function DisponibilidadTable(props: Props) {
               <Button variant="ghost" size="sm" onClick={() => { onEstadoFilterChange('__all__'); onAnioFilterChange('__all__'); }} className="h-9 text-xs text-red-600">
                 <X className="w-3 h-3 mr-1" /> Limpiar
               </Button>
+            )}
+            {exportFilters && (
+              <ExportButton
+                endpoint="/reportes/disponibilidades"
+                filters={exportFilters}
+                filename="disponibilidades"
+              />
             )}
           </div>
         </div>

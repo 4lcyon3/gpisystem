@@ -23,6 +23,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { useEntidades } from '@/hooks/useEntidades';
+import type { SelectOption } from '@/components/ui/searchable-select';
 
 const TIPOS_LABELS: Record<string, string> = {
   Habilitacion: 'Habilitación',
@@ -46,13 +48,29 @@ export function ModificacionesPage() {
   const [estadoFilter, setEstadoFilter] = useState('__all__');
   const [sortBy, setSortBy] = useState('fecha_aprobacion');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [entidadFilter, setEntidadFilter] = useState<string>('__all__');
+  const [anioFilter, setAnioFilter] = useState<string>(String(new Date().getFullYear()));
+
+  const { data: entidades = [] } = useEntidades();
 
   const { data, isLoading } = useModificacionesList({
     page, limit, search,
     sort_by: sortBy, sort_order: sortOrder,
     tipo_modificacion: tipoFilter !== '__all__' ? tipoFilter : undefined,
     estado: estadoFilter !== '__all__' ? estadoFilter : undefined,
+    entidad_id: entidadFilter !== '__all__' ? entidadFilter : undefined,
+    anio: anioFilter !== '__all__' ? parseInt(anioFilter) : undefined,
   });
+
+  const entidadOptions: SelectOption[] = [
+    { value: '__all__', label: 'Todas las entidades', badge: '∞' },
+    ...entidades.map((e) => ({
+      value: e.id,
+      label: e.nombre,
+      badge: e.ruc,
+      keywords: [e.ruc, e.sector].filter(Boolean) as string[],
+    })),
+  ];
 
   const createMutation = useCreateModificacion();
   const updateMutation = useUpdateModificacion();
@@ -138,6 +156,16 @@ export function ModificacionesPage() {
         onDelete={setDeleteConfirm}
         canEdit={canEdit}
         canDelete={isAdmin}
+        entidadFilter={entidadFilter}
+        onEntidadFilterChange={(v) => { setEntidadFilter(v); setPage(1); }}
+        anioFilter={anioFilter}
+        onAnioFilterChange={(v) => { setAnioFilter(v); setPage(1); }}
+        entidadOptions={entidadOptions}
+        exportFilters={{
+          entidad_id: entidadFilter !== '__all__' ? entidadFilter : undefined,
+          anio: anioFilter !== '__all__' ? anioFilter : undefined,
+          tipo_modificacion: tipoFilter !== '__all__' ? tipoFilter : undefined,
+        }}
       />
 
       {/* Dialog Crear/Editar */}

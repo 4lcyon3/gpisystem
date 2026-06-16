@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/static-components */
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,7 @@ import {
   ArrowRightLeft,
   Filter,
   X,
+  Building2,
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
@@ -35,6 +37,11 @@ import { es } from 'date-fns/locale';
 import type { ModificacionEntity } from '@/types/modificacion';
 import { TIPOS_MODIFICACION, ESTADOS_MODIFICACION } from '@/types/modificacion';
 import { EmptyState } from '@/components/ui/empty-state';
+import { ExportButton } from '@/components/ui/export-button';
+import { FileText } from 'lucide-react';
+import { api } from '@/lib/axios';
+import { toast } from 'sonner';
+import { SearchableSelect, type SelectOption } from '@/components/ui/searchable-select';
 
 interface ModificacionTableProps {
   data: ModificacionEntity[];
@@ -58,6 +65,12 @@ interface ModificacionTableProps {
   onDelete: (m: ModificacionEntity) => void;
   canEdit: boolean;
   canDelete: boolean;
+  entidadFilter: string;
+  onEntidadFilterChange: (v: string) => void;
+  anioFilter: string;
+  onAnioFilterChange: (v: string) => void;
+  entidadOptions: SelectOption[];
+  exportFilters?: Record<string, any>; 
 }
 
 const TIPOS_CONFIG: Record<string, { label: string; icon: typeof TrendingUp; color: string; bg: string }> = {
@@ -78,9 +91,12 @@ export function ModificacionTable({
   tipoFilter, estadoFilter,
   onSearchChange, onTipoFilterChange, onEstadoFilterChange,
   onPageChange, onLimitChange, onSort,
-  sortBy, sortOrder, onView, onEdit, onDelete, canEdit, canDelete,
+  sortBy, sortOrder, onView, onEdit, onDelete, canEdit, canDelete, exportFilters,
+  entidadFilter, onEntidadFilterChange, anioFilter, onAnioFilterChange, entidadOptions,
 }: ModificacionTableProps) {
   const totalPages = Math.max(1, Math.ceil(total / limit));
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
   const SortIcon = ({ col }: { col: string }) => {
     if (sortBy !== col) return <ArrowUpDown className="w-3.5 h-3.5 text-gray-400" />;
@@ -97,6 +113,26 @@ export function ModificacionTable({
     }).format(value);
   };
 
+  const handleDownloadPdf = async (mod: ModificacionEntity) => {
+    try {
+      const response = await api.get(`/reportes/modificaciones/${mod.id}/pdf`, {
+        responseType: 'blob',
+      });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Resolucion_${mod.numero_resolucion}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('PDF de resolución descargado');
+    } catch (error) {
+      toast.error('Error al generar el PDF: ' + error);
+    }
+  };
+
   const hasFilters = tipoFilter || estadoFilter;
   const colSpan = (canEdit ? 1 : 0) + 7;
 
@@ -111,14 +147,36 @@ export function ModificacionTable({
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Buscar por resolución, descripción o entidad..."
-              className="pl-9 h-9"
+              className="pl-9 h-12"
             />
           </div>
+          <div className="w-full lg:w-[320px]">
+          <SearchableSelect
+            options={entidadOptions}
+            value={entidadFilter}
+            onChange={onEntidadFilterChange}
+            placeholder="Filtrar por entidad"
+            searchPlaceholder="Buscar entidad..."
+            icon={<Building2 className="w-4 h-4" />}
+            clearable={false}
+            showCount
+          />
+          </div>
+
 
           <div className="flex gap-2 items-center">
             <Filter className="w-4 h-4 text-gray-500" />
+            <Select value={anioFilter} onValueChange={onAnioFilterChange}>
+              <SelectTrigger className="w-30 h-9">
+                <SelectValue placeholder="Año" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Todos los años</SelectItem>
+                {years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+              </SelectContent>
+            </Select>
             <Select value={tipoFilter} onValueChange={onTipoFilterChange}>
-              <SelectTrigger className="w-[180px] h-9">
+              <SelectTrigger className="w-45 h-9">
                 <SelectValue placeholder="Todos los tipos" />
               </SelectTrigger>
               <SelectContent>
@@ -130,7 +188,7 @@ export function ModificacionTable({
             </Select>
 
             <Select value={estadoFilter} onValueChange={onEstadoFilterChange}>
-              <SelectTrigger className="w-[160px] h-9">
+              <SelectTrigger className="w-40 h-9">
                 <SelectValue placeholder="Todos los estados" />
               </SelectTrigger>
               <SelectContent>
@@ -151,6 +209,13 @@ export function ModificacionTable({
                 <X className="w-3 h-3 mr-1" />
                 Limpiar
               </Button>
+            )}
+            {exportFilters && (
+              <ExportButton
+                endpoint="/reportes/modificaciones"
+                filters={exportFilters}
+                filename="modificaciones"
+              />
             )}
           </div>
         </div>
@@ -216,7 +281,7 @@ export function ModificacionTable({
                         {m.numero_resolucion}
                       </span>
                     </TableCell>
-                    <TableCell className="text-sm text-gray-900 truncate max-w-[200px]">
+                    <TableCell className="text-sm text-gray-900 truncate max-w-50">
                       {m.entidad_nombre || '—'}
                     </TableCell>
                     <TableCell>
@@ -236,7 +301,7 @@ export function ModificacionTable({
                         {estadoCfg?.label}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-xs text-gray-600 truncate max-w-[200px]">
+                    <TableCell className="text-xs text-gray-600 truncate max-w-50">
                       {m.descripcion || <span className="text-gray-400">—</span>}
                     </TableCell>
                     {(canEdit || canDelete) && (
@@ -250,6 +315,9 @@ export function ModificacionTable({
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => onView(m)} className="cursor-pointer">
                               <Eye className="w-4 h-4 mr-2" /> Ver detalles
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownloadPdf(m)} className="cursor-pointer">
+                              <FileText className="w-4 h-4 mr-2 text-red-600" /> Descargar PDF
                             </DropdownMenuItem>
                             {canEdit && (
                               <DropdownMenuItem onClick={() => onEdit(m)} className="cursor-pointer">

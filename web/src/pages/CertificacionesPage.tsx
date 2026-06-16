@@ -23,6 +23,10 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { CertificacionEntity, CertificacionFormValues } from '@/types/certificacion';
 import { ESTADOS_CERTIFICACION } from '@/types/certificacion';
+import { ExportButton } from '@/components/ui/export-button';
+import { FileText } from 'lucide-react';
+import { api } from '@/lib/axios';
+import { toast } from 'sonner';
 
 const ESTADOS_CONFIG: Record<string, { label: string; color: string }> = {
   vigente: { label: 'Vigente', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
@@ -39,11 +43,13 @@ export function CertificacionesPage() {
   const [search, setSearch] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('__all__');
   const [entidadFilter, setEntidadFilter] = useState('__all__');
+  const [anioFilter, setAnioFilter] = useState<string>(String(new Date().getFullYear())); 
 
   const { data, isLoading } = useCertificacionesList({
     page, limit, search,
     estado: estadoFilter !== '__all__' ? estadoFilter : undefined,
     entidad_id: entidadFilter !== '__all__' ? entidadFilter : undefined,
+    anio_fiscal: anioFilter !== '__all__' ? parseInt(anioFilter) : undefined,
   });
 
   const createMut = useCreateCertificacion();
@@ -62,6 +68,26 @@ export function CertificacionesPage() {
       keywords: [e.ruc, e.sector].filter(Boolean) as string[],
     })),
   ];
+
+    const handleDownloadPdf = async (cert: CertificacionEntity) => {
+    try {
+      const response = await api.get(`/reportes/certificaciones/${cert.id}/pdf`, {
+        responseType: 'blob',
+      });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `CCP_${cert.numero_certificado}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('PDF del certificado descargado');
+    } catch (error) {
+      toast.error('Error al generar el PDF: ' + error);
+    }
+  };
 
   const handleCreate = async (values: CertificacionFormValues) => {
     await createMut.mutateAsync(values);
@@ -83,7 +109,7 @@ export function CertificacionesPage() {
   const formatCurrency = (v?: number) =>
     new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(v || 0);
 
-  const hasFilters = estadoFilter !== '__all__' || entidadFilter !== '__all__';
+  const hasFilters = entidadFilter !== '__all__' || estadoFilter !== '__all__' || anioFilter !== String(new Date().getFullYear());
 
   return (
     <div className="p-6 lg:p-8 max-w-400 mx-auto">
@@ -95,27 +121,41 @@ export function CertificacionesPage() {
       />
 
       {/* Filtros */}
-      <div className="flex flex-col lg:flex-row gap-3 mb-6">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Buscar N° certificado..." className="pl-9 h-10" />
+      <div className="flex flex-col lg:flex-row gap-3 mb-6 items-start sm:items-center justify-between">
+        <div className="flex gap-2 items-center">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-6 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="N° certificado..." className="pl-9 h-12" />
+          </div>
+
+          <div className="w-full lg:w-[320px]">
+            <SearchableSelect
+              options={entidadOptions}
+              value={entidadFilter}
+              onChange={(v) => { setEntidadFilter(v); setPage(1); }}
+              placeholder="Filtrar por entidad"
+              searchPlaceholder="Buscar entidad..."
+              icon={<Building2 className="w-4 h-4" />}
+              clearable={false}
+              showCount
+            />
+          </div>
         </div>
 
-        <div className="w-full lg:w-[320px]">
-          <SearchableSelect
-            options={entidadOptions}
-            value={entidadFilter}
-            onChange={(v) => { setEntidadFilter(v); setPage(1); }}
-            placeholder="Filtrar por entidad"
-            searchPlaceholder="Buscar entidad..."
-            icon={<Building2 className="w-4 h-4" />}
-            clearable={false}
-            showCount
-          />
-        </div>
 
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-gray-500" />
+          <Select value={anioFilter} onValueChange={(v) => { setAnioFilter(v); setPage(1); }}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Año" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todos los años</SelectItem>
+              {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(y => (
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={estadoFilter} onValueChange={(v) => { setEstadoFilter(v); setPage(1); }}>
             <SelectTrigger className="w-45 h-10"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -129,6 +169,15 @@ export function CertificacionesPage() {
               <X className="w-3 h-3 mr-1" /> Limpiar
             </Button>
           )}
+            <ExportButton
+              endpoint="/reportes/certificaciones"
+              filters={{
+                entidad_id: entidadFilter !== '__all__' ? entidadFilter : undefined,
+                anio_fiscal: anioFilter !== '__all__' ? anioFilter : undefined,
+                estado: estadoFilter !== '__all__' ? estadoFilter : undefined,
+              }}
+              filename="certificaciones"
+            />
         </div>
       </div>
 
@@ -181,6 +230,9 @@ export function CertificacionesPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => setViewing(cert)} className="cursor-pointer">
                             <Eye className="w-4 h-4 mr-2" /> Ver detalles
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownloadPdf(cert)} className="cursor-pointer">
+                            <FileText className="w-4 h-4 mr-2 text-red-600" /> Descargar PDF
                           </DropdownMenuItem>
                           {isAdmin && isVigente && (
                             <>

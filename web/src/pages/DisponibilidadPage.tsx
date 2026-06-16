@@ -23,11 +23,13 @@ export function DisponibilidadPage() {
   const [search, setSearch] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('__all__');
   const [anioFilter, setAnioFilter] = useState('__all__');
+  const [entidadFilter, setEntidadFilter] = useState<string>('__all__');
 
   const { data, isLoading } = useDisponibilidadList({
     page, limit, search,
     estado: estadoFilter !== '__all__' ? estadoFilter : undefined,
     anio_fiscal: anioFilter !== '__all__' ? parseInt(anioFilter) : undefined,
+    entidad_id: entidadFilter !== '__all__' ? entidadFilter : undefined, 
   });
 
   const createMut = useCreateDisponibilidad();
@@ -80,6 +82,13 @@ export function DisponibilidadPage() {
         onView={setViewing} onEdit={(d) => { setEditing(d); setDialogOpen(true); }}
         onDelete={setDeleteConfirm} onAprobar={setAprobarTarget} onRechazar={setRechazarTarget}
         canEdit={canEdit} isAdmin={isAdmin}
+        entidadFilter={entidadFilter}
+        onEntidadFilterChange={(v) => { setEntidadFilter(v); setPage(1); }} 
+        exportFilters={{
+          entidad_id: entidadFilter !== '__all__' ? entidadFilter : undefined,
+          estado: estadoFilter !== '__all__' ? estadoFilter : undefined,
+          anio_fiscal: anioFilter !== '__all__' ? anioFilter : undefined,
+        }}
       />
 
       {/* Form Dialog */}
