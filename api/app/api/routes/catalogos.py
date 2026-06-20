@@ -15,7 +15,6 @@ from app.core.permissions import require_role
 from app.models.sistema import Usuario
 from app.models.dimensionales import Entidad, CentroCosto, ClasificacionGasto, FuenteDatos
 from app.models.catalogos import MetaPresupuestal, FuenteFinanciamiento
-from app.services.plantilla_service import plantilla_service
 from app.schemas.catalogo import (
     CentroCostoCreate, CentroCostoOut, ClasificacionGastoCreate, ClasificacionGastoOut, ClasificacionGastoUpdate,
     MetaPresupuestalCreate, MetaPresupuestalOut,
