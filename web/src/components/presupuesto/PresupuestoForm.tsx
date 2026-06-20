@@ -16,6 +16,7 @@ import { Database } from 'lucide-react';
 
 import { Loader2, DollarSign, Building2, Hash, TrendingUp, Target } from 'lucide-react';
 import { SearchableSelect, type SelectOption } from '../ui/searchable-select';
+import { SugerenciaPIACard } from './SugerenciaPIACard';
 
 interface PresupuestoFormProps {
   defaultValues?: Partial<PresupuestoFormValues>;
@@ -70,6 +71,7 @@ export function PresupuestoForm({
   const pia = watch('pia') || 0;
   const modificaciones = watch('modificaciones_acumuladas') || 0;
   const pimCalculado = pia + modificaciones;
+  const anioFiscal = watch('anio_fiscal');
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-PE', {
@@ -194,6 +196,14 @@ return (
             <p className="text-xs text-gray-500">Opcional - Código de seguimiento</p>
           </div>
         </div>
+        
+        {(entidadId && anioFiscal) && (
+            <SugerenciaPIACard
+              entidadId={entidadId}
+              anioFiscal={anioFiscal}
+              onAplicarSugerencia={(monto) => setValue('pia', monto, { shouldValidate: true })}
+            />
+        )}
 
         {/* POI con SearchableSelect */}
         <div className="space-y-2">

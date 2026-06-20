@@ -80,6 +80,7 @@ class Base(DeclarativeBase):
     """
     metadata = MetaData(naming_convention=convention)
     pass
+
 class TimestampMixin:
     """Mixin para auditoría automática de fechas"""
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

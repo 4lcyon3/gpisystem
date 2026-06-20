@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import (
     auth, cargas, analitica, catalogos,
     pei_poi, presupuesto, ejecucion, documentos, usuarios, modificaciones,
-    disponibilidad, certificaciones, avances, reportes
+    disponibilidad, certificaciones, avances, reportes, programacion, evaluacion
 )
 from app.worker.manager import start_worker, stop_worker
 logger = logging.getLogger(__name__)
@@ -55,6 +55,8 @@ app.include_router(documentos.router, prefix="/api/v1")
 app.include_router(usuarios.router, prefix="/api/v1")
 app.include_router(modificaciones.router, prefix="/api/v1")
 app.include_router(certificaciones.router, prefix="/api/v1")
+app.include_router(programacion.router, prefix="/api/v1")
+app.include_router(evaluacion.router, prefix="/api/v1")
 app.include_router(reportes.router, prefix="/api/v1")
 
 

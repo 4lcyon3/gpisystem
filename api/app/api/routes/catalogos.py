@@ -8,12 +8,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, desc
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+
 from app.db.session import get_db
 from app.core.auth import get_current_user
 from app.core.permissions import require_role
 from app.models.sistema import Usuario
 from app.models.dimensionales import Entidad, CentroCosto, ClasificacionGasto, FuenteDatos
 from app.models.catalogos import MetaPresupuestal, FuenteFinanciamiento
+from app.services.plantilla_service import plantilla_service
 from app.schemas.catalogo import (
     CentroCostoCreate, CentroCostoOut, ClasificacionGastoCreate, ClasificacionGastoOut, ClasificacionGastoUpdate,
     MetaPresupuestalCreate, MetaPresupuestalOut,

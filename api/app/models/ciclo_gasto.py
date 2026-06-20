@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING
-from sqlalchemy import DateTime, String, Integer, Numeric, Date, ForeignKey, Text, Index
+from sqlalchemy import CheckConstraint, DateTime, SmallInteger, String, Integer, Numeric, Date, ForeignKey, Text, Index, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from app.db.session import Base, TimestampMixin
@@ -9,18 +9,6 @@ from datetime import date, datetime
 if TYPE_CHECKING:
     from app.models.dimensionales import Entidad
     from app.models.sistema import Usuario
-
-class ProgramacionMultianual(Base, TimestampMixin):
-    """Módulo 4: Proyección de necesidades a futuro"""
-    __tablename__ = "programacion_multianual"
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    entidad_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("entidad.id"), nullable=False)
-    poi_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("poi.id"), nullable=False)
-    anio_programacion: Mapped[int] = mapped_column(Integer, nullable=False) # Año futuro
-    monto_solicitado: Mapped[float] = mapped_column(Numeric(15, 2), default=0.00)
-    monto_aprobado: Mapped[float] = mapped_column(Numeric(15, 2), default=0.00)
-    prioridad: Mapped[str] = mapped_column(String(20)) # Alta, Media, Baja
-    justificacion: Mapped[str | None] = mapped_column(Text)
 
 class Disponibilidad(Base, TimestampMixin):
     """Módulo 6: Histórico de solicitudes de saldo (Requerimientos)"""
@@ -74,3 +62,50 @@ class ModificacionPresupuestaria(Base, TimestampMixin):
     fecha_aprobacion: Mapped[date] = mapped_column(Date, nullable=False)
     monto_total: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False)
     estado: Mapped[str] = mapped_column(String(20), default="aprobada")
+
+class ProgramacionMultianual(Base, TimestampMixin):
+    """Módulo 4: Programación Multianual - Registro principal (cabecera)"""
+    __tablename__ = "programacion_multianual"
+    
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    entidad_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("entidad.id"), nullable=False, index=True)
+    nombre: Mapped[str] = mapped_column(String(255), nullable=False)  # Ej: "Construcción Hospital Regional"
+    tipo: Mapped[str] = mapped_column(String(50), nullable=False)  # proyecto, actividad, inversion
+    anio_inicio: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    anio_fin: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    estado: Mapped[str] = mapped_column(String(20), default="borrador")  # borrador, aprobado, archivado
+    observaciones: Mapped[str | None] = mapped_column(Text, nullable=True)
+    
+    # Relaciones
+    entidad: Mapped["Entidad"] = relationship()
+    detalles: Mapped[list["ProgramacionDetalle"]] = relationship(
+        back_populates="programacion",
+        cascade="all, delete-orphan"
+    )
+    
+    __table_args__ = (
+        CheckConstraint("anio_fin >= anio_inicio", name="ck_prog_anio_valido"),
+        CheckConstraint("anio_fin - anio_inicio <= 5", name="ck_prog_max_5_anios"),
+    )
+
+
+class ProgramacionDetalle(Base, TimestampMixin):
+    """Módulo 4: Detalle de montos por año fiscal"""
+    __tablename__ = "programacion_detalle"
+    
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    programacion_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("programacion_multianual.id", ondelete="CASCADE"),
+        nullable=False, index=True
+    )
+    anio_fiscal: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    monto_programado: Mapped[float] = mapped_column(Numeric(15, 2), default=0.00)
+    meta_fisica: Mapped[float] = mapped_column(Numeric(15, 2), default=0.00)
+    unidad_medida: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    
+    # Relaciones
+    programacion: Mapped["ProgramacionMultianual"] = relationship(back_populates="detalles")
+    
+    __table_args__ = (
+        UniqueConstraint("programacion_id", "anio_fiscal", name="uq_prog_detalle_anio"),
+    )

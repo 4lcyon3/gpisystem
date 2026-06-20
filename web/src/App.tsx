@@ -7,7 +7,6 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { LoginPage } from '@/pages/LoginPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { UnauthorizedPage } from '@/pages/UnauthorizedPage';
-import { ModulePlaceholderPage } from '@/pages/ModulePlaceholderPage';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ErrorBoundary } from './components/errors/ErrorBoundary';
 import { CargasPage } from './pages/CargasPage';
@@ -20,6 +19,8 @@ import { DisponibilidadPage } from '@/pages/DisponibilidadPage';
 import { CatalogosPage } from '@/pages/CatalogosPage';
 import { CertificacionesPage } from '@/pages/CertificacionesPage';
 import { AvancesPage } from '@/pages/AvancesPage';
+import { ProgramacionPage } from '@/pages/ProgramacionPage';
+import { EvaluacionPage } from '@/pages/EvaluacionPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -92,17 +93,14 @@ function AppContent() {
         <Route path="/pei" element={<PeiPage />} />
         <Route path="/poi" element={<PoiPage />} />
         <Route path="/catalogos" element={<CatalogosPage />} />
-        <Route path="/programacion" element={<ModulePlaceholderPage />} />
+        <Route path="/programacion" element={<ProgramacionPage />} />
         <Route path="/presupuesto" element={<PresupuestoPage />} />
         <Route path="/disponibilidad" element={<DisponibilidadPage />} />
         <Route path="/certificaciones" element={<CertificacionesPage />} />
         <Route path="/modificaciones" element={<ModificacionesPage />} />
         <Route path="/ejecucion" element={<CargasPage />} />
         <Route path="/avances" element={<AvancesPage />} />
-        <Route path="/alertas" element={<ModulePlaceholderPage />} />
-        <Route path="/evaluacion" element={<ModulePlaceholderPage />} />
-        <Route path="/documentos" element={<ModulePlaceholderPage />} />
-        <Route path="/reportes" element={<ModulePlaceholderPage />} />
+        <Route path="/evaluacion" element={<EvaluacionPage />} />
       </Route>
 
       {/* Página de No Autorizado */}
